@@ -1,32 +1,45 @@
-# Multi-stage build
+# Multi-stage Docker build for Payment Service
+
 # Stage 1: Build
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 
-# Copiar settings.xml para GitHub Packages
-COPY settings.xml /root/.m2/settings.xml
-
-# Copiar parent POM
-COPY parent/pom.xml /app/parent/pom.xml
-
-# Copiar código fuente
-COPY payment-microservice/pom.xml /app/
-COPY payment-microservice/src /app/src
-
 WORKDIR /app
 
-# Compilar aplicación
-RUN mvn clean package -DskipTests
+# Copy all POM files
+COPY parent/pom.xml /app/parent/pom.xml
+COPY core-microservice/pom.xml /app/core-microservice/pom.xml
+COPY payment-microservice/pom.xml /app/payment-microservice/pom.xml
+
+# Install parent POM
+RUN cd /app/parent && mvn install -N
+
+# Build core first
+COPY core-microservice/src /app/core-microservice/src
+RUN cd /app/core-microservice && mvn clean install -DskipTests
+
+# Download microservice dependencies
+RUN mkdir -p /app/payment-microservice/src/main/java/temp && \
+    echo "public class Temp {}" > /app/payment-microservice/src/main/java/temp/Temp.java
+
+RUN cd /app/payment-microservice && mvn dependency:go-offline -DskipTests
+
+# Clean temp files
+RUN rm -rf /app/payment-microservice/src/main/java/temp
+
+# Build payment service
+COPY payment-microservice/src /app/payment-microservice/src
+RUN cd /app/payment-microservice && mvn clean package -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Copiar JAR desde build stage
-COPY --from=build /app/target/payment-microservice-0.0.1-SNAPSHOT.jar app.jar
+# Copy JAR from build stage
+COPY --from=build /app/payment-microservice/target/payment-microservice-*.jar app.jar
 
-# Exponer puerto
-EXPOSE 8087
+# Expose port
+EXPOSE 8086
 
-# Comando de ejecución
-CMD ["java", "-jar", "app.jar"]
+# Run application
+ENTRYPOINT ["java", "-jar", "app.jar"]
