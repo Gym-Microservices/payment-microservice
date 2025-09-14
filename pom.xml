@@ -17,18 +17,7 @@
 	<name>payment-microservice</name>
 	<description>Payment service to gym microservices</description>
 
-	<repositories>
-		<repository>
-			<id>gym-microservices-releases</id>
-			<url>https://maven.pkg.github.com/Gym-Microservices/parent</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
-		<dependency>
-			<groupId>com.gym</groupId>
-			<artifactId>gym-core</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -36,6 +25,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
