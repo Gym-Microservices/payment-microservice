@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.util.Date;
 
 
 @Service
@@ -24,17 +25,21 @@ public class PaymentConsumer {
     @RabbitListener(queues = "pagos-queue")
     public void processPayment(Payment payment) {
 
-        Boolean memberExists = validateMemberExists(payment.getMemberId());
-
-        if (!memberExists) {
+        // Validación de fecha de pago
+        if (payment.getPaymentDate() == null || payment.getPaymentDate().before(new Date())) {
             throw new AmqpRejectAndDontRequeueException("Error en el pago, enviando a DLQ",
-                    new IllegalArgumentException("El miembro no existe"));
+                    new IllegalArgumentException("La fecha de pago no es válida (debe ser igual o posterior a hoy)"));
         }
 
+        if (payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new AmqpRejectAndDontRequeueException("Error en el pago, enviando a DLQ",
+                    new IllegalArgumentException("El monto debe ser mayor a 0"));
+        }
+
+        // Guardar el pago válido
         paymentRepository.save(payment);
 
         System.out.println("Payment processed and saved: " + payment.toString());
-        
     }
 
     public boolean validateMemberExists(Long memberId) {
