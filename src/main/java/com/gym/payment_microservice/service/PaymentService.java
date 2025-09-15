@@ -12,7 +12,7 @@ public class PaymentService {
     private RabbitTemplate rabbitTemplate;
 
     public String sendPayment(Payment payment){
-        rabbitTemplate.convertAndSend("pagos-queue", payment);
+        rabbitTemplate.convertAndSend("pagos-exchange", "pagos-queue", payment);
         return "Payment sent to the queue successfully";
     }
 
