@@ -27,7 +27,7 @@ public class PaymentController {
             @ApiResponse(responseCode = "200", description = "Payment processed successfully"),
             @ApiResponse(responseCode = "400", description = "Error processing payment")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER') or hasRole('MEMBER')")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_COACH') or hasRole('ROLE_MEMBER')")
     public String processPayment(@RequestBody Payment payment) {
         return paymentService.sendPayment(payment);
     }
