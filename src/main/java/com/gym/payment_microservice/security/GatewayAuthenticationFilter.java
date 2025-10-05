@@ -17,8 +17,16 @@ public class GatewayAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String authSource = request.getHeader("X-Auth-Source");
+        String userAgent = request.getHeader("User-Agent");
 
-        if ("gateway".equals(authSource)) {
+        // Detectar peticiones internas entre microservicios
+        if (isInternalMicroserviceRequest(userAgent)) {
+            // Crear token de sistema para comunicación interna
+            GatewayAuthenticationToken authToken = new GatewayAuthenticationToken(
+                    "system", "system", "system@gym.internal", 
+                    Arrays.asList("ROLE_ADMIN", "ROLE_SYSTEM"));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        } else if ("gateway".equals(authSource)) {
             String userId = request.getHeader("X-User-Id");
             String username = request.getHeader("X-User-Name");
             String email = request.getHeader("X-User-Email");
@@ -37,5 +45,13 @@ public class GatewayAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isInternalMicroserviceRequest(String userAgent) {
+        if (userAgent == null) return false;
+        // Detectar peticiones de Java/Spring (RestTemplate)
+        return userAgent.startsWith("Java/") || 
+               userAgent.contains("Spring") ||
+               userAgent.contains("RestTemplate");
     }
 }
